@@ -267,6 +267,7 @@ public class Main {
         }
 
     }
+
     public static int getClearByRaid(long playerID, int raid){
 
 
