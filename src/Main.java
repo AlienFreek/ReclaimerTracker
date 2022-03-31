@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.*;
+import java.util.Locale;
 
 
 public class Main {
@@ -70,21 +71,42 @@ public class Main {
 
         ResultSet rset = stmt.executeQuery("select * from userinfo");
 
-
-        int dbSize = 0; //Gets size of DB
-        while (rset.next()){ dbSize++; }
+        int dbSize = 0;
+        while (rset.next()){ dbSize++; } //Gets size of DB
         rset.first();
 
-        getClanMemberInfo(dbSize); //Checks if the database needs to be updated. If so, executes the update
-        for (int i = 0; i < dbSize; i++){ //Pulls data for each ID in DB and executes populateDB
-            rset = stmt.executeQuery("select * from userinfo where ID = "+i);
-            rset.next();
-            populateDB(rset.getLong("destinyID"), rset.getInt("membershipType"));
-
-            wait(25); //25ms sleep timer to avoid rate limits
+        System.out.println("Update member list? 'y' or 'n'");
+        if (getUserChoice() == 1){
+            getClanMemberInfo(dbSize); //Checks if the database needs to be updated. If so, executes the update
         }
 
+        System.out.println("Update member character IDs? 'y' or 'n'");
+        if (getUserChoice() == 1){
+            for (int i = 0; i < dbSize; i++){ //Pulls data for each ID in DB and executes populateDB
+                rset = stmt.executeQuery("select * from userinfo where ID = "+i);
+                rset.next();
+                populateDB(rset.getLong("destinyID"), rset.getInt("membershipType"));
 
+                System.out.println((dbSize-i)+" members left to update.");
+                wait(25); //25ms sleep timer to avoid rate limits
+            }
+            System.out.println("Success. Character IDs for all members have been updated.");
+        }
+    }
+    public static int getUserChoice() throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        String userValue = in.readLine();
+
+        while (true){
+            switch(userValue.toUpperCase()){
+                case "Y":
+                    return 1;
+                case "N":
+                   return 2;
+            }
+            System.out.println("Incorrect response. Please use \"Y\" or \"N\"");
+            userValue = in.readLine();
+        }
     }
 
     public static void getClanMemberInfo(int dbCount) throws IOException, SQLException {
@@ -98,9 +120,10 @@ public class Main {
         con.setRequestMethod("GET");
         con.setRequestProperty("X-API-KEY", apiKey);
 
-        int responseCode = con.getResponseCode();
+        //Debug. Echos request and displays response code.
+        /*int responseCode = con.getResponseCode();
         System.out.println("\nSending request to: " + url);
-        System.out.println("Response Code: " + responseCode);
+        System.out.println("Response Code: " + responseCode);*/
 
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
@@ -180,7 +203,7 @@ public class Main {
                 }*/
             }
         }
-
+        System.out.println("Success. Member list updated.\n");
         //Debug: outputs the json data received from the API for the all clan members
         /*JsonObject json = (JsonObject) parser.parse(response);
         System.out.println();
@@ -198,10 +221,12 @@ public class Main {
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
         con.setRequestMethod("GET");
         con.setRequestProperty("X-API-KEY", apiKey);
-        int responseCode = con.getResponseCode();
+
+        //Debug. Echos request and returns response code.
+        /*int responseCode = con.getResponseCode();
         System.out.println("\nSending request to: " + url);
-        System.out.println("Response Code: " + responseCode);
-        System.out.println();
+        System.out.println("Response Code: " + responseCode);*/
+
         BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
         String response = "";
@@ -245,7 +270,8 @@ public class Main {
 
             String strUpdate =
                     "update userinfo set char"+var+" = "+charIds[var]+" where destinyID = "+destinyId;
-            System.out.println("Sending command: " + strUpdate);
+
+            //System.out.println("Sending command: " + strUpdate);
 
             int countUpdated = stmt.executeUpdate(strUpdate);
             //Debug. Outputs affected rows per run
@@ -265,10 +291,11 @@ public class Main {
                 ++rowCount;
             }*/
         }
-
+        System.out.println("Character IDs for member "+destinyId+" have been updated.");
     }
 
-    public static int getClearByRaid(long playerID, int raid){
+    public static int getClearsForPlayer(long playerID){
+
 
 
 
